@@ -3,6 +3,8 @@ package Data;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import Object.Vocabulary;
 public class InteractWithData {
@@ -19,36 +21,48 @@ public class InteractWithData {
             String str;
           con = JDBCUtil.getConnection();
             String sqll = "SHOW TABLES";
-            int maxIndex = -999;
+
             Statement stmt = con.createStatement();
 
             ResultSet rs = stmt.executeQuery(sqll);
-
+            ArrayList<Integer> art=new ArrayList<>();
             while (rs.next()) {
                 String tableName = rs.getString(1);
-                String query = "SELECT MAX(`index`) AS max_value FROM `" + tableName + "`";
+                String query = "SELECT `index` FROM `" + tableName + "`";
                 try (Statement statement = con.createStatement();
                      ResultSet resultSet = statement.executeQuery(query)) {
-                    if (resultSet.next()) {
-                        int maxValue = resultSet.getInt("max_value");
-                        if (maxValue > maxIndex) {
-                            maxIndex = maxValue + 1;
-                        }
+                    while (resultSet.next()) {
+                        int ind = resultSet.getInt("index");
+                        art.add(ind);
                     }
                 }
-
             }
+            Collections.sort(art);
+            int nIndex=-1;
+            if(art.get(art.size()-1)==art.size()-1){
+                nIndex=art.size();
+            }else{
+                for(int i=0;i<art.size();i++){
+                    if(art.get(i)!=i){
+                        nIndex=i;
+                        break;
+                    }
+                }
+            }
+            for(int i:art){
+                System.out.print(i+" ");
+            }
+
 
             rs.close();
             stmt.close();
             con.close();
             con=JDBCUtil.getConnection();
 
-
-            voca.setIndex(maxIndex);
+            voca.setIndex(nIndex);
             String sql = "INSERT INTO "+ voca.getSector() +" (`index`, word, type, time_learn, day_learn) VALUES (?, ?, ?, ?, ?)";
             pst = con.prepareStatement(sql);
-            pst.setInt(1, maxIndex);
+            pst.setInt(1,nIndex);
             pst.setString(2, voca.getWord());
             pst.setString(3, voca.getType());
             pst.setInt(4, voca.getTimeLearn());
